@@ -1,0 +1,2 @@
+openai
+chainlit==1.1.300rc3
