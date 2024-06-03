@@ -45,14 +45,19 @@ class EventHandler(AsyncAssistantEventHandler):
     async def on_text_done(self, text):
         await self.current_message.update()
         if text.annotations:
-            print(text.annotations)
             for annotation in text.annotations:
                 if annotation.type == "file_path":
                     response = await async_openai_client.files.with_raw_response.content(annotation.file_path.file_id)
+                    file_name = annotation.text.split("/")[-1]
+                    file_el = cl.File(content=response.content, name=file_name)
                     await cl.Message(
                         content="",
-                        elements=[cl.File(content=response.content, name=annotation.text)]).send()
-
+                        elements=[file_el]).send()
+                    # Hack to fix links
+                    if annotation.text in self.current_message.content and file_el.chainlit_key:
+                        self.current_message.content = self.current_message.content.replace(annotation.text, f"/project/file/{file_el.chainlit_key}?session_id={cl.context.session.id}")
+                        await self.current_message.update()
+                        
     async def on_tool_call_created(self, tool_call):
         self.current_tool_call = tool_call.id
         self.current_step = cl.Step(name=tool_call.type, type="tool")
