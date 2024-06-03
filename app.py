@@ -49,15 +49,9 @@ class EventHandler(AsyncAssistantEventHandler):
             for annotation in text.annotations:
                 if annotation.type == "file_path":
                     response = await async_openai_client.files.with_raw_response.content(annotation.file_path.file_id)
-                    try:
-                        fig = plotly.io.from_json(response.content)
-                        await cl.Message(
-                            content="",
-                            elements=[cl.Plotly(name="", figure=fig)]).send()
-                    except Exception as e:
-                        await cl.Message(
-                            content="",
-                            elements=[cl.File(content=response.content, name=annotation.text)]).send()
+                    await cl.Message(
+                        content="",
+                        elements=[cl.File(content=response.content, name=annotation.text)]).send()
 
     async def on_tool_call_created(self, tool_call):
         self.current_tool_call = tool_call.id

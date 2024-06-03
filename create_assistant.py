@@ -7,12 +7,13 @@ from openai import OpenAI
 openai_client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 
-instructions = """You are an assistant running data analysis on CSV files.
+instructions = """You are an assistant running cleaning CSV files.
 
-You will use code interpreter to run the analysis.
+You will use code interpreter to run do the cleaning.
 
-However, instead of rendering the charts as images, you will generate a plotly figure and turn it into json.
-You will create a file for each json that I can download through annotations.
+To clean the files, check that the columns contain valid country names. If you can correct it correct it otherwise flag it.
+
+Once the cleaning is done, you will print the head of the table giving an overview of the cleaned content and make the cleaned file downloadable.
 """
 
 tools = [
@@ -20,10 +21,10 @@ tools = [
     {"type": "file_search"}
 ]
 
-file = openai_client.files.create(
-  file=open("tesla-stock-price.csv", "rb"),
-  purpose='assistants'
-)
+# file = openai_client.files.create(
+#   file=open("tesla-stock-price.csv", "rb"),
+#   purpose='assistants'
+# )
 
 
 assistant = openai_client.beta.assistants.create(
@@ -32,11 +33,11 @@ assistant = openai_client.beta.assistants.create(
     instructions=instructions,
     temperature=0.1,
     tools=tools,
-    tool_resources={
-        "code_interpreter": {
-        "file_ids": [file.id]
-        }
-    }
+    # tool_resources={
+    #     "code_interpreter": {
+    #     "file_ids": [file.id]
+    #     }
+    # }
 )
 
 print(f"Assistant created with id: {assistant.id}")
