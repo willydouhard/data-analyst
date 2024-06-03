@@ -49,15 +49,22 @@ class EventHandler(AsyncAssistantEventHandler):
             for annotation in text.annotations:
                 if annotation.type == "file_path":
                     response = await async_openai_client.files.with_raw_response.content(annotation.file_path.file_id)
+                    file_name = annotation.text.split("/")[-1]
                     try:
                         fig = plotly.io.from_json(response.content)
+                        element = cl.Plotly(name=file_name, figure=fig)
                         await cl.Message(
                             content="",
-                            elements=[cl.Plotly(name="", figure=fig)]).send()
+                            elements=[element]).send()
                     except Exception as e:
+                        element = cl.File(content=response.content, name=file_name)
                         await cl.Message(
                             content="",
-                            elements=[cl.File(content=response.content, name=annotation.text)]).send()
+                            elements=[element]).send()
+                    # Hack to fix links
+                    if annotation.text in self.current_message.content and element.chainlit_key:
+                        self.current_message.content = self.current_message.content.replace(annotation.text, f"/project/file/{element.chainlit_key}?session_id={cl.context.session.id}")
+                        await self.current_message.update()
 
     async def on_tool_call_created(self, tool_call):
         self.current_tool_call = tool_call.id
